@@ -1,103 +1,72 @@
-# SubQuery - Starter Package
+# SubQuery Common API
 
+We believe that the DApps ecosystem will benefit from a common core API that each parachain can integrate (and extend) to index and expose their chain data for future consumer facing applications (e.g. a wallet, explorer, or other dApp).
 
-The Starter Package is an example that you can use as a starting point for developing your SubQuery project.
-A SubQuery package defines which data The SubQuery will index from the Substrate blockchain, and how it will store it. 
+We are aiming to create an open-source SubQuery Project for common app and network data. This will be accompanied by documentation and learning materials
 
-## Preparation
+## Outcomes
 
-#### Environment
+1. __Improve the Interoperability of DApps and Parachains__: Defined and maintained common core data API interface for Polkadot, Kusama, and other parachains. Just like Substrate defines a standard interface API that parachain developers can adopt, extend, and modify - decentralised application developers would benefit from a standard API for common use cases that they can also adopt, extend, and modify.
+2. __Attract and Support More Developers in Kusama__: Provide a starting point for consumer facing dApp developers to get started with Polkadot and Kusama
 
+# Running this Project
+
+## In the SubQuery Explorer
+
+This project will soon be uploaded to the SubQuery Explorer for you to play around with
+
+## Run a local version
+
+Requirements:
 - [Typescript](https://www.typescriptlang.org/) are required to compile project and define types.  
-
-- Both SubQuery CLI and generated Project have dependencies and require [Node](https://nodejs.org/en/).
+- Both SubQuery CLI and the generated Project have dependencies that require [Node](https://nodejs.org/en/).
      
-
-#### Install the SubQuery CLI
-
 Install SubQuery CLI globally on your terminal by using Yarn or NPM:
 
-```
-npm install -g @subql/cli
+```shell
+# Yarn
 yarn global add @subql/cli
+
+# NPM
+npm install -g @subql/cli
 ```
 
-Run help to see available commands and usage provide by CLI
-```
-subql help
-```
+Under the project directory, run the following command to install the project's dependencies.
 
-## Initialize the starter package
-
-Inside the directory in which you want to create the SubQuery project, simply replace `project-name` with your project name and run the command:
-```
-subql init --starter project-name
-```
-Then you should see a folder with your project name has been created inside the directory, you can use this as the start point of your project. And the files should be identical as in the [Directory Structure](https://doc.subquery.network/directory_structure.html).
-
-Last, under the project directory, run following command to install all the dependency.
-```
+```shell
+# Yarn
 yarn install
+
+# NPM
+npm install
 ```
 
+Generate the required GraphQL models
 
-## Configure your project
-
-In the starter package, we have provided a simple example of project configuration. You will be mainly working on the following files:
-
-- The Manifest in `project.yaml`
-- The GraphQL Schema in `schema.graphql`
-- The Mapping functions in `src/mappings/` directory
-
-For more information on how to write the SubQuery, 
-check out our doc section on [Define the SubQuery](https://doc.subquery.network/define_a_subquery.html) 
-
-#### Code generation
-
-In order to index your SubQuery project, it is mandatory to build your project first.
-Run this command under the project directory.
-
-````
+```shell
+# Yarn
 yarn codegen
-````
 
-## Build the project
-
-In order to deploy your SubQuery project to our hosted service, it is mandatory to pack your configuration before upload.
-Run pack command from root directory of your project will automatically generate a `your-project-name.tgz` file.
-
+# NPM
+npm run-script codegen
 ```
+
+Build the project locally
+
+```shell
+# Yarn
 yarn build
+
+# NPM
+npm run-script build
 ```
 
-## Indexing and Query
-
-#### Run required systems in docker
-
-
-Under the project directory run following command:
+Run following command to run using docker or [read more about different ways to run a SubQuery project](https://doc.subquery.network/run/run.html)
 
 ```
 docker-compose pull && docker-compose up
 ```
-#### Query the project
 
 Open your browser and head to `http://localhost:3000`.
 
-Finally, you should see a GraphQL playground is showing in the explorer and the schemas that ready to query.
-
-For the `subql-starter` project, you can try to query with the following code to get a taste of how it works.
-
-````graphql
-{
-  query{
-    starterEntities(first:10){
-      nodes{
-        field1,
-        field2,
-        field3
-      }
-    }
-  }
-}
-````
+You should see a GraphQL playground is showing in the explorer and the schemas that ready to query. On the top right of the playground, you'll find a Docs button that will open a documentation draw. This documentation is automatically generated and helps you find what entities and methods you can query.
