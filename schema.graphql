@@ -24,6 +24,9 @@ type Event @entity {
 
   extrinsic: ExtrinsicV4
 
+  #payload: JSON!
+  payload: String!
+
   timestamp: Date!
 
 }
@@ -72,15 +75,19 @@ type Account @entity {
 
   pubKey: String! @index
 
-  identity: Identity
+  subAccounts: [Account]
 
-  balances: [AccountBalance]! @derivedFrom(field: "account")
+  identity: [IdentityHistory]
+
+  #account curent balance = retrive latest balance history
+  balances: [AccountBalanceHistory]! @derivedFrom(field: "account")
 
   nonce: Int
 
 }
 
-type AccountBalance @entity {
+# Store balance changes history
+type AccountBalanceHistory @entity {
 
   id: ID! #account_id[-asset_id]
 
@@ -94,6 +101,8 @@ type AccountBalance @entity {
 
   #  locked: JSON
   locked: [LockedBalance]
+
+  timestamp: Date!
 
 }
 
@@ -114,7 +123,8 @@ type Asset @entity {
 }
 
 #TODO sub identity
-type Identity @jsonField {
+# Store identity changes history
+type IdentityHistory @jsonField {
   display: String
   legal: String
   web: String
@@ -122,6 +132,7 @@ type Identity @jsonField {
   email: String
   image: String
   twitter: String
+  timestamp: Date!
 }
 
 type Transfer @entity {
