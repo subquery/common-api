@@ -71,48 +71,38 @@ Open your browser and head to `http://localhost:3000`.
 
 You should see a GraphQL playground is showing in the explorer and the schemas that ready to query. On the top right of the playground, you'll find a Docs button that will open a documentation draw. This documentation is automatically generated and helps you find what entities and methods you can query.
 
-## Research & design:
+We believe that the DApps ecosystem will benefit from a common core API that each parachain can integrate (and extend) to index and expose their chain data for future consumer facing applications (e.g. a wallet, explorer, or other dApp).
 
+We are aiming to create an open-source SubQuery Project for common app and network data. This will be accompanied by documentation and learning materials
 
-### Problem 1: 
+# Design Decision Log
 
-We want to record the extrinsic and its data from the chain, so we need to determine a fixed entity structure. However, extrinsic will have different versions, and its structure is changed. Especially for the customized substrate chain, the field in some entities may be unknown. The challenge is is when a new version of extrinsic appears, we can’t know if it fit in the entity struct we currently define
+## Custom Chain Extrinsic Handling 
 
-##### Solution 1-1:
+We want to record extrinsics and their data from the chain, so we need to determine a fixed entity structure. However, the extrinsics structure may change significantly between each parachain and versions within that parachain.
 
-Now, we have designed `ExtrinsicV4` in our entity, which represents extrinsic version 4 and its structure in the current version. Respectively, a new entity needs to be defined for new versions of extrinsic.
+__Solution__
 
-###### Pros: 
+We have versioned the Extrinsic entity, current latest is `ExtrinsicV4`. A new versioned entity may be needed for new versions of extrinsic.
 
-The structure of different versions will be fixed, and there is no need to update the table structure when there is a new version.
+__Pros:__ The structure of different versions will be fixed, and there is no need to update the table structure when there is a new version.
 
-###### Cons: 
+__Cons:__ When the query needs to traverse all extrinsics, or when aggregate data is needed, this design will not be particularly friendly.
 
-When the query needs to traverse all extrinsic, or when aggregate data is needed, this design will not be friendly.
+## Historic v Latest Balances 
 
+Calculating and maintaing the current balance of an account is hard, especially when supporting balances of accounts with multiple assets on a custom chain. We already know balance can be obtained through `api.query.system.account`, but it is not certain in what scenario and when to trigger this update. We cannot be sure that we will monitor all events/extrinsic that may affect the account balance. 
 
-### Problem 2: 
+__Solution__
 
-We define an entity of ‘AccountBalance’ to record the latest (current) account balance status, and we want to support balance with multiple `Asset`.We already know balance can be obtained through `api.query.system.account`, but it is not certain in what scenario and when to trigger this update. We cannot cover 100% events/extrinsic that affect the account balance, especially there will be unknown events in a cutomized chain, and in subquery project it will be large workload job to add filters for all known events.  Also, different chain describe asset differently, we need store them separately. 
+When indexing each block, we extract all the `accountId`s and `assetId`s involved in all events and extrinsics. We then make queries for each `accountId`/`assetId` pair for latest balances and update the `AccountBalance` on any change.
 
-##### Solution 2-1:
+If a chain supports multiple assets, `AccountBalance` id which is formed by `account_id - assert_id`, which represent balance for this account in this asset. Else only `account_id` will be stored.
 
-When indexing to one of the blocks, we extract all the accountId and assetId involved in all event/extrinsic. In this approach, all accounts in the current block that may have a ‘potential’ balance change will be updated.
+__Pros:__ Will not miss any update for the account.
 
-If a chain support multiple assets, `AccountBalance` id which is formed by `account_id - assert_id`, which represent balance for this account in this asset. Else only `account_id` will be stored.
+__Cons:__ Not the most efficient way to check for updated account balances. For example, a block contains a large number of different `accountId`, only one or two account balances actually changed, and we will query all of them one by one anyway. 
 
-
-###### Pros: 
-Will not miss any update for the account.
-
-###### Cons:
-For some accounts whose actual balance has not changed, we have also repeatedly checked their accounts. For example, a block contains a large number of different accountId, only one or two account balances actually changed, and we need to query all of them one by one. 
-
-
-### Improvement:
+# Future Improvements
  
-Create an entity to record the change of account balance and record the type of transaction as detailed as possible.
-
-
-
-
+- Create an entity to record the change of account balance and record the type of transaction as detailed as possible.
