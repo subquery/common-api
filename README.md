@@ -70,3 +70,35 @@ docker-compose pull && docker-compose up
 Open your browser and head to `http://localhost:3000`.
 
 You should see a GraphQL playground is showing in the explorer and the schemas that ready to query. On the top right of the playground, you'll find a Docs button that will open a documentation draw. This documentation is automatically generated and helps you find what entities and methods you can query.
+
+# Design Decision Log
+
+## Custom Chain Extrinsic Handling 
+
+We want to record extrinsics and their data from the chain, so we need to determine a fixed entity structure. However, the extrinsics structure may change significantly between each parachain and versions within that parachain.
+
+__Solution__
+
+We have versioned the Extrinsic entity, current latest is `ExtrinsicV4`. A new versioned entity may be needed for new versions of extrinsic.
+
+__Pros:__ The structure of different versions will be fixed, and there is no need to update the table structure when there is a new version.
+
+__Cons:__ When the query needs to traverse all extrinsics, or when aggregate data is needed, this design will not be particularly friendly.
+
+## Historic v Latest Balances 
+
+Calculating and maintaing the current balance of an account is hard, especially when supporting balances of accounts with multiple assets on a custom chain. We already know balance can be obtained through `api.query.system.account`, but it is not certain in what scenario and when to trigger this update. We cannot be sure that we will monitor all events/extrinsic that may affect the account balance. 
+
+__Solution__
+
+When indexing each block, we extract all the `accountId`s and `assetId`s involved in all events and extrinsics. We then make queries for each `accountId`/`assetId` pair for latest balances and update the `AccountBalance` on any change.
+
+If a chain supports multiple assets, `AccountBalance` id which is formed by `account_id - assert_id`, which represent balance for this account in this asset. Else only `account_id` will be stored.
+
+__Pros:__ Will not miss any update for the account.
+
+__Cons:__ Not the most efficient way to check for updated account balances. For example, a block contains a large number of different `accountId`, only one or two account balances actually changed, and we will query all of them one by one anyway. 
+
+# Future Improvements
+ 
+- Create an entity to record the change of account balance and record the type of transaction as detailed as possible.
