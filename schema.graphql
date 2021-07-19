@@ -1,10 +1,10 @@
 type Block @entity {
-  # BlockHeight
+  # Block Hash
   id: ID!
 
-  hash: String! @index
+  blockHeight: BigInt!
 
-  timestamp: Date!
+  timestamp: Date! @index
 
   events: [Event] @derivedFrom(field: "block")
 
@@ -13,21 +13,42 @@ type Block @entity {
 
 type Event @entity {
   # BlockHeight-EventId
-  id: ID! 
+  id: ID!
 
   module: String! @index
 
-  event: String!
+  event: String! @index
 
   block: Block!
 
   extrinsic: Extrinsic
 
-  #payload: JSON!
-  payload: String!
+  phase: Phase!
 
-  timestamp: Date!
+  #Vec<Hash>
+  topics: [String]!
+
+  #parameters: JSON!
+  parameters: String!
+
+  timestamp: Date! @index
+
+  relatedAccounts: [String]!
 }
+
+type Phase @jsonField {
+  isApplyExtrinsic: Boolean!
+  asApplyExtrinsic: BigInt!
+  isFinalization: Boolean
+  isInitialization: Boolean
+}
+
+#type EventAccount @entity {
+#  id: ID!
+#  event: Event!
+#  account: Account!
+#  timestamp: Date!
+#}
 
 type Extrinsic @entity {
 
@@ -35,7 +56,7 @@ type Extrinsic @entity {
 
   module: String! @index
 
-  call: String!
+  call: String! @index
 
   block: Block
 
@@ -47,20 +68,28 @@ type Extrinsic @entity {
 
   signature: String!
 
+  signatureType: String!
+
   version: Int!
 
-  timestamp: Date!
+  timestamp: Date! @index
 
-  # extrinsicV1: ExtrinsicV1 TODO
+  signer: Account
 
-  # extrinsicV2: ExtrinsicV2 TODO
-
-  # extrinsicV3: ExtrinsicV3 TODO
-
-  extrinsicV4: ExtrinsicV4
+  #   extrinsicV1: ExtrinsicV1 TODO
+  #
+  #   extrinsicV2: ExtrinsicV2 TODO
+  #
+  #   extrinsicV3: ExtrinsicV3 TODO
+  #
+  # TODO, replace back after support union type
+  # extra: ExtrinsicExtra
+  extra: String!
 }
 
-type ExtrinsicV4 @entity {
+#union ExtrinsicExtra = ExtrinsicV3 | ExtrinsicV4 #TODO, support union type
+
+type ExtrinsicV4 @jsonField {
 
   # parameters: JSON!
   parameters: String!
@@ -77,27 +106,34 @@ type ExtrinsicV4 @entity {
   extension: String
 }
 
+type ExtrinsicV3 @jsonField {
+  #TODO, support generic json type
+  # parameters: JSON!
+  parameters: String!
+  extension: String
+}
+
 type Account @entity {
   # Address
   id: ID!
 
   pubKey: String! @index
 
-  subAccounts: [Account]
+  #  subAccounts: [Account] more like subIdentity
 
   identity: [IdentityHistory]
 
   # To get the current balance, get the latest AccountBalanceHistory
-  balances: [AccountBalanceHistory]! @derivedFrom(field: "account")
+  balanceHistory: [AccountBalanceHistory]! @derivedFrom(field: "account")
 
-  nonce: Int
+  nextNonce: Int
 
 }
 
 # Store balance changes history
 type AccountBalanceHistory @entity {
   # account_id[-asset_id]
-  id: ID! 
+  id: ID!
 
   asset: Asset!
 
@@ -107,18 +143,22 @@ type AccountBalanceHistory @entity {
 
   reservedAmount: BigInt!
 
+  feeFrozen: BigInt!
+
+  miscFrozen: BigInt!
+
   # locked: JSON
   locked: [LockedBalance]
 
-  timestamp: Date!
+  timestamp: Date! @index
 }
 
 type LockedBalance @jsonField {
 
   id: String # LockIdentifier eg. 0x7374616b696e6720 = 'staking'
-  
+
   amount: BigInt!
-  
+
   reasons: String
 }
 
@@ -166,25 +206,33 @@ type Transfer @entity {
   from: Account!
 
   event: Event!
+
+  timestamp: Date! @index
 }
 
 type Era @entity{
   # Era Index
   id: ID!
 
-  block: Block!
+  startBlock: Int! @index
+
+  endBlock: Int @index
 }
 
 type Epoch @entity{
   # Epoch_id
   id: ID!
 
-  block: Block!
+  startBlock: Int! @index
+
+  endBlock: Int @index
 }
 
 type Session @entity{
   # session_id
   id: ID!
 
-  block: Block!
+  startBlock: Int! @index
+
+  endBlock: Int @index
 }
